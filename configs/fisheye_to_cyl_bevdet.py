@@ -1,18 +1,28 @@
 _base_ = ['../default_runtime.py']
 
+import math
+
 custom_imports = dict(
     imports=['projects.Fisheye3DOD.utils',
              'projects.Fisheye3DOD.dataset',
              'projects.Fisheye3DOD.models',
              'projects.Fisheye3DOD.models.bevdet',],
     allow_failed_imports=False)
-
+# custom_imports = dict(imports=['projects.example_project.dummy'])
 
 dataset_type = 'Fisheye3DODDataset'
 data_root = 'data/Fisheye3DODdataset/'
+train_ann_file = 'ImageSets-2hz-0.7-all/fisheye3dod_infos_train.pkl'
+val_ann_file = 'ImageSets-2hz-0.7-all/fisheye3dod_infos_val.pkl'
 classes = ['Car', 'Van', 'Truck', 'Bus', 'Pedestrian', 'Cyclist']
-point_cloud_range = [-48, -48, -5, 48, 48, 5]
-cam_type = 'cam_nusc'
+ref_range = 48
+detect_range = [-ref_range, -ref_range, -5, ref_range, ref_range, 5]
+cam_type = 'cam_fisheye'
+cam_fov = 220
+xbound=[-ref_range, ref_range, 0.3]
+ybound=[-ref_range, ref_range, 0.3]
+zbound=[-5.0, 5.0, 10.0]
+dbound=[0.5, ref_range+0.5, 0.5]
 backend_args = None
 
 train_pipeline = [
@@ -22,30 +32,36 @@ train_pipeline = [
         color_type='color',
         backend_args=backend_args,
         load_cam_type=cam_type,
-        load_cam_names=['nu_rgb_camera_front', 'nu_rgb_camera_front_left',
-                        'nu_rgb_camera_front_right', 'nu_rgb_camera_rear',
-                        'nu_rgb_camera_rear_right', 'nu_rgb_camera_rear_left']),
+        load_cam_names=['fisheye_camera_front', 'fisheye_camera_left',
+                        'fisheye_camera_right', 'fisheye_camera_rear',
+                        ]),
+    dict(
+        type='MultiViewFisheyeCylindricalProjection',
+        image_size=(800, 400),  # (width, height)
+        horizontal_range=[-110, 110],
+        vertical_range=[-45, 45],
+        ),
+    # dict(
+    #     type='ImageAug3D',
+    #     final_dim=[400, 400],
+    #     resize_lim=[1, 1],
+    #     bot_pct_lim=[0.0, 0.0],
+    #     rot_lim=[0, 0],
+    #     rand_flip=False,
+    #     is_train=False,
+    #     img_key=cam_type,),
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,
         with_label_3d=True,),
     dict(
-        type='ImageAug3D',
-        final_dim=[400, 800],
-        resize_lim=[0.625, 0.625],
-        bot_pct_lim=[0.0, 0.0],
-        rot_lim=[0, 0],
-        rand_flip=False,
-        is_train=False,
-        img_key=cam_type,),
-    dict(
         type='ObjectRangeFilter',
-        point_cloud_range=point_cloud_range),
+        point_cloud_range=detect_range),
     dict(
         type='Fisheye3DODPackDetInputs',
         keys=[cam_type, 'points', 'gt_bboxes_3d', 'gt_labels_3d'],
         meta_keys=[
-            'cam2img', 'cam2lidar', 'lidar2cam', 'lidar2img', 'box_type_3d', 'token', "img_aug_matrix"],
+            'cam2img', 'cam2lidar', 'lidar2cam', 'lidar2img', 'box_type_3d', 'token'],
         input_img_keys=[cam_type],)
 ]
 
@@ -56,25 +72,31 @@ test_pipeline = [
         color_type='color',
         backend_args=backend_args,
         load_cam_type=cam_type,
-        load_cam_names=['nu_rgb_camera_front', 'nu_rgb_camera_front_left',
-                        'nu_rgb_camera_front_right', 'nu_rgb_camera_rear',
-                        'nu_rgb_camera_rear_right', 'nu_rgb_camera_rear_left']),
+        load_cam_names=['fisheye_camera_front', 'fisheye_camera_left',
+                        'fisheye_camera_right', 'fisheye_camera_rear',
+                        ]),
     dict(
-        type='ImageAug3D',
-        final_dim=[400, 800],
-        resize_lim=[0.625, 0.625],
-        bot_pct_lim=[0.0, 0.0],
-        rot_lim=[0, 0],
-        rand_flip=False,
-        is_train=False,
-        img_key=cam_type,),
+        type='MultiViewFisheyeCylindricalProjection',
+        image_size=(800, 400),  # (width, height)
+        horizontal_range=[-110, 110],
+        vertical_range=[-45, 45],
+        ),
+    # dict(
+    #     type='ImageAug3D',
+    #     final_dim=[400, 400],
+    #     resize_lim=[1, 1],
+    #     bot_pct_lim=[0.0, 0.0],
+    #     rot_lim=[0, 0],
+    #     rand_flip=False,
+    #     is_train=False,
+    #     img_key=cam_type,),
     dict(
         type='Fisheye3DODPackDetInputs',
         keys=[cam_type, 'gt_bboxes_3d', 'gt_labels_3d'],
         meta_keys=[
             'cam2img', 'cam2lidar', 'lidar2img', 'lidar2cam',
             'sample_idx', 'token', 'img_path', 'lidar_path', 
-            'num_pts_feats', 'box_type_3d', 'img_aug_matrix'],
+            'num_pts_feats', 'box_type_3d',],
         input_img_keys=[cam_type],)
 ]
 
@@ -105,16 +127,18 @@ model = dict(
         out_channels=256,
         num_outs=2),
     view_transform=dict(
-        type='LSSTransform',
+        type='CylindricalLSSTransform',
         in_channels=256,
         out_channels=96,
-        image_size=[400, 800],
+        image_size=[400, 800], # (height, width)
         feature_size=[25, 50],
-        xbound=[-48, 48, 0.3],
-        ybound=[-48, 48, 0.3],
-        zbound=[-5, 5, 10],
-        dbound=[0.5, 48.5, 0.5],
-        downsample=1),
+        xbound=xbound,
+        ybound=ybound,
+        zbound=zbound,
+        dbound=dbound,
+        downsample=1,
+        horizontal_range=[-110, 110],
+        vertical_range=[-45, 45],),
     pts_backbone=dict(
         type='SECOND',
         in_channels=96,
@@ -180,8 +204,8 @@ model = dict(
             img_key=cam_type,
             lidar_key='points',),
         pts=dict(
-            dataset='Fisheye3DOD',
-            point_cloud_range=point_cloud_range,
+            dataset='Fisheye3D',
+            point_cloud_range=detect_range,
             grid_size=[1280, 1280, 40],
             voxel_size=[0.075, 0.075, 0.2],
             out_size_factor=8,
@@ -204,7 +228,7 @@ model = dict(
             img_key=cam_type,
             lidar_key='points',),
         pts=dict(
-            dataset='Fisheye3DOD',
+            dataset='Fisheye3D',
             grid_size=[1280, 1280, 40],
             out_size_factor=8,
             voxel_size=[0.075, 0.075],
@@ -221,7 +245,7 @@ train_dataloader = dict(
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file='ImageSets-2hz/fisheye3dod_infos_train.pkl',
+            ann_file=train_ann_file,
             pipeline=train_pipeline,
             test_mode=False,
             metainfo=dict(classes=classes),
@@ -236,7 +260,7 @@ val_dataloader = dict(
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file='ImageSets-2hz/fisheye3dod_infos_val.pkl',
+        ann_file=val_ann_file,
         pipeline=test_pipeline,
         test_mode=True,
         metainfo=dict(classes=classes),
@@ -244,7 +268,7 @@ val_dataloader = dict(
 )
 test_dataloader = val_dataloader
 
-
+# TODO
 val_evaluator = dict(
     type='Fisheye3DODMetric',
 )
@@ -305,11 +329,19 @@ auto_scale_lr = dict(enable=True, base_batch_size=8)
 
 default_hooks = dict(
     logger=dict(type='LoggerHook', interval=100),
-    checkpoint=dict(type='CheckpointHook', interval=1, ),
+    checkpoint=dict(type='CheckpointHook', interval=1, max_keep_ckpts=5),
+    # early_stopping=dict(
+    #     type='EarlyStoppingHook',
+    #     monitor='NDS',            
+    #     rule='greater',            
+    #     min_delta=0.0002,             
+    #     strict=True,                
+    #     check_finite=True,          
+    #     patience=3)
     )
 
 custom_hooks = [
-    dict(type='SaveDetectionHook', score_thr=0.1, class_names=classes),
+    dict(type='SaveDetectionHook', score_thr=0.01, class_names=classes),
 ]
 
 find_unused_parameters = False
