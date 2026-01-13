@@ -1,4 +1,4 @@
-_base_ = ['../default_runtime.py']
+_base_ = ['./default_runtime.py']
 
 import math
 
@@ -170,7 +170,7 @@ model = dict(
             img_key=cam_type,
             lidar_key='points',),
         pts=dict(
-            dataset='Fisheye3D',
+            dataset='Fisheye3DOD',
             point_cloud_range=point_cloud_range,
             grid_size=[1280, 1280, 40],
             voxel_size=[0.075, 0.075, 0.2],
@@ -194,7 +194,7 @@ model = dict(
             img_key=cam_type,
             lidar_key='points',),
         pts=dict(
-            dataset='Fisheye3D',
+            dataset='Fisheye3DOD',
             grid_size=[1280, 1280, 40],
             out_size_factor=8,
             voxel_size=[0.075, 0.075],

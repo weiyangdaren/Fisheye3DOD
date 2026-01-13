@@ -9,7 +9,7 @@ from mmengine.logging import MMLogger
 from nuscenes.utils.data_classes import Box as NuScenesBox
 
 from mmdet3d.registry import METRICS
-from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes,
+from mmdet3d.structures import CameraInstance3DBoxes, LiDARInstance3DBoxes
 
 
 from .fisheye3dod_eval import Fisheye3DODEval

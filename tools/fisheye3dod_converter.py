@@ -4,13 +4,21 @@ from concurrent import futures as futures
 import mmengine
 import numpy as np
 import json
-from PIL import Image
+# from PIL import Image
+from tqdm import tqdm
 from collections import defaultdict
 
-from ..utils.fisheye3dod_calib import Fisheye3DODCalib, parse_sensor_transform
-
+import os
 import sys
-sys.path.append(Path(__file__).resolve().parents[1].as_posix())
+current_file_path = os.path.abspath(__file__)
+project_root = os.path.dirname(os.path.dirname(current_file_path))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from utils.fisheye3dod_calib import Fisheye3DODCalib, parse_sensor_transform
+
+# import sys
+# sys.path.append(Path(__file__).resolve().parents[1].as_posix())
 
 CATEGORIES = {
     "Car": 0,
@@ -89,6 +97,12 @@ def get_fisheye3dod_info(root_path,
     if total_cam is None:
         total_cam = {'cam_rgb': cam_rgb, 'cam_nusc': cam_nusc,
                     'cam_fisheye': cam_fisheye, 'cam_dvs': cam_dvs}
+    CAM_SIZE_MAP = {
+        'cam_nusc': (1280, 720),
+        'cam_fisheye': (800, 800),
+        'cam_rgb': (1920, 1080),  
+        'cam_dvs': (1280, 720)   
+    }
 
     def map_func(token):
         scene_name, vehicle_name, weather, frame_id, prev_id, next_id = token['scene_name'], token[
@@ -108,6 +122,8 @@ def get_fisheye3dod_info(root_path,
         cam_info = {}
         for cam_type, cam_list in total_cam.items():
             cam_info[cam_type] = defaultdict(dict)
+            width, height = CAM_SIZE_MAP.get(cam_type, (1280, 720))
+
             for cam_name in cam_list:
                 if cam_type != 'cam_dvs':
                     cam_path = f'{scene_name}/{vehicle_name}/{cam_name}/{frame_id}.png'
@@ -120,9 +136,9 @@ def get_fisheye3dod_info(root_path,
                         {'cam_npz_path': cam_npz_path})
 
                 # get intrinsic
-                cam_path = root_path / cam_path
-                image = Image.open(cam_path).convert("RGB")
-                width, height = image.size  # Get width and height
+                # cam_path = root_path / cam_path
+                # image = Image.open(cam_path).convert("RGB")
+                # width, height = image.size  # Get width and height
                 cam_info[cam_type][cam_name].update(
                     {'image_size': (width, height)})
                 cam_transform = sensor_transform_info[cam_name].get(
@@ -157,9 +173,10 @@ def get_fisheye3dod_info(root_path,
         return info
 
     with futures.ThreadPoolExecutor(num_worker) as executor:
-        image_infos = executor.map(map_func, sample_list)
-
-    return list(image_infos)
+        image_infos = list(tqdm(executor.map(map_func, sample_list), 
+                            total=len(sample_list), 
+                            desc="Converting samples"))
+    return image_infos
 
 
 def create_fisheye3dod_infos(root_path,

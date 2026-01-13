@@ -247,7 +247,7 @@ class TransFusionHead(nn.Module):
                 heatmap[:, 1], kernel_size=1, stride=1, padding=0)
             local_max[:, 2, ] = F.max_pool2d(
                 heatmap[:, 2], kernel_size=1, stride=1, padding=0)
-        elif self.test_cfg['dataset'] == 'Fisheye3D':
+        elif self.test_cfg['dataset'] == 'Fisheye3DOD':
             local_max[:, 4, ] = F.max_pool2d(
                 heatmap[:, 4], kernel_size=1, stride=1, padding=0)
             local_max[:, 5, ] = F.max_pool2d(

@@ -1,4 +1,4 @@
-_base_ = ["../default_runtime.py"]
+_base_ = ["./default_runtime.py"]
 
 import math
 
@@ -75,6 +75,7 @@ train_pipeline = [
             "lidar2img",
             "box_type_3d",
             "token",
+            "img_aug_matrix",
         ],
         input_img_keys=[cam_type],
     ),
@@ -125,6 +126,7 @@ test_pipeline = [
             "lidar_path",
             "num_pts_feats",
             "box_type_3d",
+            "img_aug_matrix",
         ],
         input_img_keys=[cam_type],
     ),
@@ -237,7 +239,7 @@ model = dict(
             lidar_key="points",
         ),
         pts=dict(
-            dataset="Fisheye3D",
+            dataset="Fisheye3DOD",
             point_cloud_range=detect_range,
             grid_size=[1280, 1280, 40],
             voxel_size=[0.075, 0.075, 0.2],
@@ -263,7 +265,7 @@ model = dict(
             lidar_key="points",
         ),
         pts=dict(
-            dataset="Fisheye3D",
+            dataset="Fisheye3DOD",
             grid_size=[1280, 1280, 40],
             out_size_factor=8,
             voxel_size=[0.075, 0.075],

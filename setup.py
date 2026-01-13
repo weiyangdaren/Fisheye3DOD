@@ -48,7 +48,7 @@ if __name__ == '__main__':
         ext_modules=[
             make_cuda_ext(
                 name='bev_pool_ext',
-                module='projects.Fisheye3DOD.models.bevdet.ops.bev_pool',
+                module='models.bevdet.ops.bev_pool',
                 sources=[
                     'src/bev_pool.cpp',
                     'src/bev_pool_cuda.cu',
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             ),
             make_cuda_ext(
                 name='voxel_layer',
-                module='projects.Fisheye3DOD.models.bevdet.ops.voxel',
+                module='models.bevdet.ops.voxel',
                 sources=[
                     'src/voxelization.cpp',
                     'src/scatter_points_cpu.cpp',
