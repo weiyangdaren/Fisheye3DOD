@@ -439,7 +439,7 @@ class TransFusionHead(nn.Module):
                         indices=[2],
                         radius=0.7),
                 ]
-            elif self.test_cfg['dataset'] == 'Fisheye3D':
+            elif self.test_cfg['dataset'] == 'Fisheye3DOD':
                 self.tasks = [
                     dict(
                         num_class=4,
