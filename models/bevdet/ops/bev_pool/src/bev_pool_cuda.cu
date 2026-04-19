@@ -31,7 +31,7 @@ __global__ void bev_pool_kernel(int b, int d, int h, int w, int n, int c, int n_
     return;
   int interval_start = interval_starts[index];
   int interval_length = interval_lengths[index];
-  const int *cur_geom_feats = geom_feats + interval_start * 4;
+  const int *cur_geom_feats = geom_feats + (interval_start + interval_length - 1) * 4;
   const float *cur_x = x + interval_start * c + cur_c;
   float *cur_out = out + cur_geom_feats[3] * d * h * w * c +
                    cur_geom_feats[2] * h * w * c + cur_geom_feats[0] * w * c +
@@ -75,7 +75,7 @@ __global__ void bev_pool_grad_kernel(int b, int d, int h, int w, int n, int c, i
   int interval_start = interval_starts[index];
   int interval_length = interval_lengths[index];
 
-  const int *cur_geom_feats = geom_feats + interval_start * 4;
+  const int *cur_geom_feats = geom_feats + (interval_start + interval_length - 1) * 4;
   float *cur_x_grad = x_grad + interval_start * c + cur_c;
 
   const float *cur_out_grad = out_grad + cur_geom_feats[3] * d * h * w * c +
@@ -103,7 +103,7 @@ __global__ void bev_mean_pool_kernel(int b, int d, int h, int w, int n, int c, i
     return;
   int interval_start = interval_starts[index];
   int interval_length = interval_lengths[index];
-  const int *cur_geom_feats = geom_feats + interval_start * 4;
+  const int *cur_geom_feats = geom_feats + (interval_start + interval_length - 1) * 4;
   const float *cur_x = x + interval_start * c + cur_c;
   float *cur_out = out + cur_geom_feats[3] * d * h * w * c +
                    cur_geom_feats[2] * h * w * c + cur_geom_feats[0] * w * c +
@@ -134,7 +134,7 @@ __global__ void bev_mean_pool_grad_kernel(int b, int d, int h, int w, int n, int
   int interval_start = interval_starts[index];
   int interval_length = interval_lengths[index];
 
-  const int *cur_geom_feats = geom_feats + interval_start * 4;
+  const int *cur_geom_feats = geom_feats + (interval_start + interval_length - 1) * 4;
   float *cur_x_grad = x_grad + interval_start * c + cur_c;
 
   const float *cur_out_grad = out_grad + cur_geom_feats[3] * d * h * w * c +
