@@ -98,6 +98,16 @@ An example output is shown below:
 ![Visualization](./docs/visual.jpg)
 
 
+## License
+
+The original code contributed by the Fisheye3DOD authors and the Fisheye3DOD dataset (including the images, annotations, calibration files, and train/validation splits distributed through the dataset download link above) are released under the [MIT License](LICENSE). The MIT License applies to the dataset as well as the code.
+
+You may use, modify, and redistribute the dataset, including as part of a new benchmark, for academic or commercial purposes under the MIT License. Please include the copyright and permission notice when redistributing the dataset or substantial portions of it.
+
+Third-party code, dependencies, and assets remain subject to their respective licenses and copyright notices.
+
+If you use this work or dataset in your research, we would appreciate a citation to our paper, "Exploring Surround-View Fisheye Camera 3D Object Detection" (AAAI 2026).
+
 ## 🙏 Acknowledgment  
 This work is built upon open-source 3D perception frameworks including [mmdetection3D](https://github.com/open-mmlab/mmdetection3d), [LSS](https://github.com/nv-tlabs/lift-splat-shoot), [BEVDet](https://github.com/HuangJunJie2017/BEVDet), [BEVFusion](https://github.com/open-mmlab/mmdetection3d/tree/main/projects/BEVFusion) and [PETR](https://github.com/open-mmlab/mmdetection3d/tree/main/projects/PETR), with fisheye calibration implemented using [ocamcalib_undistort](https://github.com/matsuren/ocamcalib_undistort). 
 
