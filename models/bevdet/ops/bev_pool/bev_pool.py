@@ -126,6 +126,45 @@ class QuickCumsumMeanCuda(torch.autograd.Function):
 
         return x_grad, None, None, None, None, None, None
 
+class QuickCumsumMean(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, x, geom_feats, ranks):
+        x = x.cumsum(0)
+        kept = torch.ones(x.shape[0], device=x.device, dtype=torch.bool)
+        kept[:-1] = ranks[1:] != ranks[:-1]
+
+        interval_starts = torch.where(kept)[0].int()
+        interval_lengths = torch.zeros_like(interval_starts)
+        interval_lengths[1:] = interval_starts[1:] - interval_starts[:-1]
+        interval_lengths[0] = interval_starts[0] + 1
+
+        x, geom_feats = x[kept], geom_feats[kept]
+        x = torch.cat((x[:1], x[1:] - x[:-1]))
+
+        interval_lengths = interval_lengths.unsqueeze(-1)
+        x = x / interval_lengths
+
+        # save kept for backward
+        ctx.save_for_backward(kept)
+        ctx.save_for_backward(interval_lengths)
+
+        # no gradient for geom_feats
+        ctx.mark_non_differentiable(geom_feats)
+
+        return x, geom_feats
+
+    @staticmethod
+    def backward(ctx, gradx, gradgeom):
+        (kept, interval_lengths) = ctx.saved_tensors
+        back = torch.cumsum(kept, 0)
+        back[kept] -= 1
+
+        gradx /= interval_lengths
+
+        val = gradx[back]
+
+        return val, None, None
 
 def bev_pool(feats, coords, B, D, H, W, mean_pool=False):
     assert feats.shape[0] == coords.shape[0]
